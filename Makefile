@@ -1,6 +1,8 @@
-compilar: servidor cliente
+compilar: common servidor cliente
 
+common:
+	gcc -o common.o -c common.c
 servidor:
-	gcc -o servidor.out servidor.c -lm
+	gcc -o servidor.out servidor.c common.o -lm
 cliente:
-	gcc -o cliente.out cliente.c -lcrypt -lm
+	gcc -o cliente.out cliente.c common.o -lcrypt -lm
