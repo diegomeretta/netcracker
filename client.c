@@ -33,7 +33,7 @@ int main(int argc, char *argv[]){
 	}
 
 	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons(4444);
+	servidor.sin_port = htons(PORT);
 
 	if (h = gethostbyname(argv[1])) {
 		memcpy(&servidor.sin_addr, h->h_addr, h->h_length);

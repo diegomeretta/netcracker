@@ -1,3 +1,3 @@
 #!/bin/bash
-./servidor.out &
-./cliente.out localhost
+./server.out &
+./client.out localhost

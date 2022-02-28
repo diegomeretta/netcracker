@@ -1,14 +1,14 @@
 ## Netcracker MD5
 MD5 netcracker
 
-Ejecutar el archivo servidor.out, con los siguientes archivos en la misma carpeta
-- alfabeto.txt
--- Es el conjunto de caracteres a utilizar
+Run the file server.out, with the same files in the same folder
+- alphabet.txt
+-- Characters to use
 - hash.txt
--- Es el hash del cual se busca obtener la palabra original
+-- MD5 hash to crack (with '$1$' salt)
 
-./servidor.out
+./server.out
 
-Ejecutar el cliente con la IP o nombre del servidor
+Run client with server IP as parameter
 
-./cliente.out localhost
+./client.out localhost

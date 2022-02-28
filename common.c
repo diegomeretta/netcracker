@@ -3,6 +3,8 @@
 
 #include "common.h"
 
+#define PORT 4444
+
 void devuelvePalabra(int posicion, char alfabeto[128], char * palabra){
 	int largo = 1;
 	int corte = 0;
