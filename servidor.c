@@ -12,10 +12,10 @@
 
 #include "common.h"
 
-#define P_SIZE sizeof (struct protocolo)
+#define P_SIZE sizeof (struct packet_struct)
 
-struct protocolo {
-	uint64_t numeroPaquete;
+struct packet_struct {
+	uint64_t packet_number;
 	char alfabeto[128];
 	char hash[27];
 	uint64_t inicio;
@@ -23,21 +23,20 @@ struct protocolo {
 	uint64_t resultado;
 };
 
-void cargaArchivo(char *nombreArchivo, char *cadena) {
-	char contenido[128];
+void load_file(char *file_name, char *string_array) {
 	int i = 0;
-	FILE *archivo;
-	char caracter;
-	archivo = fopen(nombreArchivo, "r");
-	if (archivo == NULL) {
+	FILE *file;
+	char character;
+	file = fopen(file_name, "r");
+	if (file == NULL) {
 		printf("\nError de apertura del archivo. \n");
 	}
-	while ((feof(archivo) == 0) && (caracter = fgetc(archivo)) != '\n')  {
-		cadena[i] = caracter;
+	while ((feof(file) == 0) && (character = fgetc(file)) != '\n')  {
+		string_array[i] = character;
 		i++;
 	}
-	cadena[i] = '\0';
-	fclose(archivo);
+	string_array[i] = '\0';
+	fclose(file);
 }
 
 int main(){
@@ -49,7 +48,7 @@ int main(){
 	char buffer[P_SIZE];
 	struct sockaddr_in servidor;
 	struct sockaddr_in cliente;
-	struct protocolo *paquete;
+	struct packet_struct *paquete;
 
 	servidor.sin_family = AF_INET;
 	servidor.sin_port = htons(4444);
@@ -69,14 +68,14 @@ int main(){
 	FD_SET (sd, &conjunto);
 
 	int sdc = 0;
-	paquete = (struct protocolo *) buffer;
+	paquete = (struct packet_struct *) buffer;
 	int leidos = 0;
 
 	int cantidadPaquetes = 0;
 	char *cadenaalfabeto = malloc(128 * sizeof(char));
-	cargaArchivo("alfabeto.txt", cadenaalfabeto);
+	load_file("alfabeto.txt", cadenaalfabeto);
 	char *cadenaHash = malloc(27 * sizeof(char));
-	cargaArchivo("hash.txt", cadenaHash);
+	load_file("hash.txt", cadenaHash);
 	int termino = 0;
 	uint64_t contador = 0;
 
@@ -108,7 +107,7 @@ int main(){
 						termino = 1;
 					} else {
 						cantidadPaquetes++;
-						paquete->numeroPaquete = htonl(cantidadPaquetes);
+						paquete->packet_number = htonl(cantidadPaquetes);
 						strcpy(paquete->alfabeto, cadenaalfabeto);
 						strcpy(paquete->hash, cadenaHash);
 						paquete->inicio = htonl(contador + 1);
@@ -119,7 +118,7 @@ int main(){
 						devuelvePalabra(ntohl(paquete->inicio), cadenaalfabeto, palabraInicio);
 						char palabraFin[128];
 						devuelvePalabra(ntohl(paquete->fin), cadenaalfabeto, palabraFin);
-						printf ("Paquete: %d, inicio: %s, fin: %s\n", ntohl(paquete->numeroPaquete), palabraInicio, palabraFin);
+						printf ("Paquete: %d, inicio: %s, fin: %s\n", ntohl(paquete->packet_number), palabraInicio, palabraFin);
 						if ((n = send(sdc, buffer, P_SIZE, 0) < 0)) {
 							perror("Send");
 						}
