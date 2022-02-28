@@ -14,13 +14,15 @@
 
 #define P_SIZE sizeof (struct packet_struct)
 
+#define WORDS_PER_PACKET 10000
+
 struct packet_struct {
 	uint64_t packet_number;
-	char alfabeto[128];
+	char alphabet[128];
 	char hash[27];
-	uint64_t inicio;
-	uint64_t fin;
-	uint64_t resultado;
+	uint64_t number_start;
+	uint64_t number_end;
+	uint64_t result;
 };
 
 void load_file(char *file_name, char *string_array) {
@@ -44,82 +46,82 @@ int main(){
 	int n = 0;
 	int lon = 0;
 	fd_set copia;
-	fd_set conjunto;
+	fd_set file_descriptor_set;
 	char buffer[P_SIZE];
-	struct sockaddr_in servidor;
-	struct sockaddr_in cliente;
-	struct packet_struct *paquete;
+	struct sockaddr_in server;
+	struct sockaddr_in client;
+	struct packet_struct *packet;
 
-	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons(4444);
-	servidor.sin_addr.s_addr = INADDR_ANY;
+	server.sin_family = AF_INET;
+	server.sin_port = htons(4444);
+	server.sin_addr.s_addr = INADDR_ANY;
 
-	int sd = 0;
-	sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	int socket_descriptor = 0;
+	socket_descriptor = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	if (bind(sd, (struct sockaddr *) &servidor, sizeof(servidor)) < 0) {
+	if (bind(socket_descriptor, (struct sockaddr *) &server, sizeof(server)) < 0) {
 		perror("BIND");
 		exit(-1);
 	}
 
-	listen(sd, 5);
+	listen(socket_descriptor, 5);
 
-	FD_ZERO (&conjunto);
-	FD_SET (sd, &conjunto);
+	FD_ZERO (&file_descriptor_set);
+	FD_SET (socket_descriptor, &file_descriptor_set);
 
-	int sdc = 0;
-	paquete = (struct packet_struct *) buffer;
-	int leidos = 0;
+	int socket_descriptor_copy = 0;
+	packet = (struct packet_struct *) buffer;
+	int readed = 0;
 
-	int cantidadPaquetes = 0;
-	char *cadenaalfabeto = malloc(128 * sizeof(char));
-	load_file("alfabeto.txt", cadenaalfabeto);
-	char *cadenaHash = malloc(27 * sizeof(char));
-	load_file("hash.txt", cadenaHash);
+	int generated_packets = 0;
+	char *string_alphabet = malloc(128 * sizeof(char));
+	load_file("alfabeto.txt", string_alphabet);
+	char *string_hash = malloc(27 * sizeof(char));
+	load_file("hash.txt", string_hash);
 	int termino = 0;
 	uint64_t contador = 0;
 
 	while (termino == 0) {
-		copia = conjunto;
+		copia = file_descriptor_set;
 		select (FD_SETSIZE, &copia , NULL , NULL , NULL );
-		if ( FD_ISSET(sd, &copia)) {
-			lon = sizeof(cliente);
-			sdc = accept(sd, (struct sockaddr *) &cliente, &lon);
-			FD_SET ( sdc , &conjunto);
+		if ( FD_ISSET(socket_descriptor, &copia)) {
+			lon = sizeof(client);
+			socket_descriptor_copy = accept(socket_descriptor, (struct sockaddr *) &client, &lon);
+			FD_SET ( socket_descriptor_copy , &file_descriptor_set);
 		}
 
-		for ( sdc = 1 ; sdc < FD_SETSIZE ; sdc++ ) {
-			if ( FD_ISSET (sdc, &copia) && (sdc != sd)) {
-				leidos = 0;
-				while (leidos < P_SIZE) {
-					if ((n = recv(sdc, buffer + leidos, P_SIZE - leidos, 0)) <= 0) {
-						close(sdc);
-						FD_CLR ( sdc , &conjunto);
+		for ( socket_descriptor_copy = 1 ; socket_descriptor_copy < FD_SETSIZE ; socket_descriptor_copy++ ) {
+			if ( FD_ISSET (socket_descriptor_copy, &copia) && (socket_descriptor_copy != socket_descriptor)) {
+				readed = 0;
+				while (readed < P_SIZE) {
+					if ((n = recv(socket_descriptor_copy, buffer + readed, P_SIZE - readed, 0)) <= 0) {
+						close(socket_descriptor_copy);
+						FD_CLR ( socket_descriptor_copy , &file_descriptor_set);
 						break;
 					}
-				leidos = leidos + n;
+				readed = readed + n;
 				}
-				if ( leidos == P_SIZE ) {
-					if (ntohl(paquete->resultado) != 0){
+				if ( readed == P_SIZE ) {
+					if (ntohl(packet->result) != 0){
 						char resultado[128];
-						devuelvePalabra(ntohl(paquete->resultado), cadenaalfabeto, resultado);
+						devuelvePalabra(ntohl(packet->result), string_alphabet, resultado);
 						printf ("Resultado encontrado : %s\n", resultado);
 						termino = 1;
 					} else {
-						cantidadPaquetes++;
-						paquete->packet_number = htonl(cantidadPaquetes);
-						strcpy(paquete->alfabeto, cadenaalfabeto);
-						strcpy(paquete->hash, cadenaHash);
-						paquete->inicio = htonl(contador + 1);
-						contador = contador + 10000;
-						paquete->fin = htonl(contador);
-						paquete->resultado = htonl(0);
+						generated_packets++;
+						packet->packet_number = htonl(generated_packets);
+						strcpy(packet->alphabet, string_alphabet);
+						strcpy(packet->hash, string_hash);
+						packet->number_start = htonl(contador + 1);
+						contador = contador + WORDS_PER_PACKET;
+						packet->number_end = htonl(contador);
+						packet->result = htonl(0);
 						char palabraInicio[128];
-						devuelvePalabra(ntohl(paquete->inicio), cadenaalfabeto, palabraInicio);
+						devuelvePalabra(ntohl(packet->number_start), string_alphabet, palabraInicio);
 						char palabraFin[128];
-						devuelvePalabra(ntohl(paquete->fin), cadenaalfabeto, palabraFin);
-						printf ("Paquete: %d, inicio: %s, fin: %s\n", ntohl(paquete->packet_number), palabraInicio, palabraFin);
-						if ((n = send(sdc, buffer, P_SIZE, 0) < 0)) {
+						devuelvePalabra(ntohl(packet->number_end), string_alphabet, palabraFin);
+						printf ("Paquete: %d, inicio: %s, fin: %s\n", ntohl(packet->packet_number), palabraInicio, palabraFin);
+						if ((n = send(socket_descriptor_copy, buffer, P_SIZE, 0) < 0)) {
 							perror("Send");
 						}
 					}
