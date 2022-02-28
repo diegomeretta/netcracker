@@ -5,7 +5,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <math.h>
 #include <unistd.h>
 
 #include "common.h"
